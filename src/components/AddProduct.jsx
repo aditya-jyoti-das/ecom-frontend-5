@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-
+import Host from "./Host";
 const AddProduct = () => {
   const [product, setProduct] = useState({
     name: "",
@@ -34,7 +34,7 @@ const AddProduct = () => {
     );
 
     axios
-      .post("http://localhost:8080/api/product", formData, {
+      .post(`http://${Host}:8080/api/product`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
