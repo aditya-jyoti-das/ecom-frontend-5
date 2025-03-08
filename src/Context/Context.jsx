@@ -1,5 +1,5 @@
-import axios from "../axios";
 import { useState, useEffect, createContext } from "react";
+import axios from "../axios";
 
 const AppContext = createContext({
   data: [],
@@ -7,16 +7,20 @@ const AppContext = createContext({
   cart: [],
   addToCart: (product) => {},
   removeFromCart: (productId) => {},
-  refreshData:() =>{},
-  updateStockQuantity: (productId, newQuantity) =>{}
-  
+  refreshData: () => {},
+  updateStockQuantity: (productId, newQuantity) => {},
+  token: null, // Added for auth
+  loginUser: (token) => {}, // Added for auth
+  logoutUser: () => {}, // Added for auth
+  isAuthenticated: false, // Added for auth
 });
 
 export const AppProvider = ({ children }) => {
   const [data, setData] = useState([]);
   const [isError, setIsError] = useState("");
-  const [cart, setCart] = useState(JSON.parse(localStorage.getItem('cart')) || []);
-
+  const [cart, setCart] = useState(JSON.parse(localStorage.getItem("cart")) || []);
+  const [token, setToken] = useState(localStorage.getItem("token") || null); // Load token from localStorage
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
 
   const addToCart = (product) => {
     const existingProductIndex = cart.findIndex((item) => item.id === product.id);
@@ -27,20 +31,18 @@ export const AppProvider = ({ children }) => {
           : item
       );
       setCart(updatedCart);
-      localStorage.setItem('cart', JSON.stringify(updatedCart));
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
     } else {
       const updatedCart = [...cart, { ...product, quantity: 1 }];
       setCart(updatedCart);
-      localStorage.setItem('cart', JSON.stringify(updatedCart));
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
     }
   };
 
   const removeFromCart = (productId) => {
-    console.log("productID",productId)
     const updatedCart = cart.filter((item) => item.id !== productId);
     setCart(updatedCart);
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
-    console.log("CART",cart)
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
   };
 
   const refreshData = async () => {
@@ -52,20 +54,49 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const clearCart =() =>{
+  const clearCart = () => {
     setCart([]);
-  }
-  
+    localStorage.setItem("cart", JSON.stringify([]));
+  };
+
+  // New auth functions
+  const loginUser = (newToken) => {
+    setToken(newToken);
+    setIsAuthenticated(true);
+    localStorage.setItem("token", newToken);
+  };
+
+  const logoutUser = () => {
+    setToken(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem("token");
+    clearCart(); // Optional: clear cart on logout
+  };
+
   useEffect(() => {
     refreshData();
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
+    localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
-  
+
   return (
-    <AppContext.Provider value={{ data, isError, cart, addToCart, removeFromCart,refreshData, clearCart  }}>
+    <AppContext.Provider
+      value={{
+        data,
+        isError,
+        cart,
+        addToCart,
+        removeFromCart,
+        refreshData,
+        clearCart,
+        token,
+        loginUser,
+        logoutUser,
+        isAuthenticated,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );

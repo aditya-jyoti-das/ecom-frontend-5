@@ -1,34 +1,45 @@
-
 import React, { useContext, useState, useEffect } from "react";
 import AppContext from "../Context/Context";
-import axios from "axios";
+import axios from "../../src/axios";
 import CheckoutPopup from "./CheckoutPopup";
-import { Button } from 'react-bootstrap';
+import { Button } from "react-bootstrap";
 import Host from "./Host";
 const Cart = () => {
-  const { cart, removeFromCart , clearCart } = useContext(AppContext);
+  const { cart, removeFromCart, clearCart } = useContext(AppContext);
   const [cartItems, setCartItems] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const [cartImage, setCartImage] = useState([]);
   const [showModal, setShowModal] = useState(false);
-
+  const token = localStorage.getItem("token");
   useEffect(() => {
     const fetchImagesAndUpdateCart = async () => {
       console.log("Cart", cart);
       try {
-        const response = await axios.get(`http://${Host}:8080/api/products`);
+        const response = await axios.get(`${Host}api/products`, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined, // Manual token
+          },
+        });
         const backendProductIds = response.data.map((product) => product.id);
 
-        const updatedCartItems = cart.filter((item) => backendProductIds.includes(item.id));
+        const updatedCartItems = cart.filter((item) =>
+          backendProductIds.includes(item.id)
+        );
         const cartItemsWithImages = await Promise.all(
           updatedCartItems.map(async (item) => {
             try {
               const response = await axios.get(
-                `http://${Host}:8080/api/product/${item.id}/image`,
-                { responseType: "blob" }
+                `${Host}api/product/${item.id}/image`,
+                {
+                  responseType: "blob",
+                  Authorization: token ? `Bearer ${token}` : undefined,
+                }
               );
-              const imageFile = await converUrlToFile(response.data, response.data.imageName);
-              setCartImage(imageFile)
+              const imageFile = await converUrlToFile(
+                response.data,
+                response.data.imageName
+              );
+              setCartImage(imageFile);
               const imageUrl = URL.createObjectURL(response.data);
               return { ...item, imageUrl };
             } catch (error) {
@@ -37,7 +48,7 @@ const Cart = () => {
             }
           })
         );
-        console.log("cart",cart)
+        console.log("cart", cart);
         setCartItems(cartItemsWithImages);
       } catch (error) {
         console.error("Error fetching product data:", error);
@@ -60,7 +71,7 @@ const Cart = () => {
   const converUrlToFile = async (blobData, fileName) => {
     const file = new File([blobData], fileName, { type: blobData.type });
     return file;
-  }
+  };
 
   const handleIncreaseQuantity = (itemId) => {
     const newCartItems = cartItems.map((item) => {
@@ -75,7 +86,6 @@ const Cart = () => {
     });
     setCartItems(newCartItems);
   };
-  
 
   const handleDecreaseQuantity = (itemId) => {
     const newCartItems = cartItems.map((item) =>
@@ -95,27 +105,35 @@ const Cart = () => {
   const handleCheckout = async () => {
     try {
       for (const item of cartItems) {
-        const { imageUrl, imageName, imageData, imageType, quantity, ...rest } = item;
+        const { imageUrl, imageName, imageData, imageType, quantity, ...rest } =
+          item;
         const updatedStockQuantity = item.stockQuantity - item.quantity;
-  
-        const updatedProductData = { ...rest, stockQuantity: updatedStockQuantity };
-        console.log("updated product data", updatedProductData)
-  
+
+        const updatedProductData = {
+          ...rest,
+          stockQuantity: updatedStockQuantity,
+        };
+        console.log("updated product data", updatedProductData);
+
         const cartProduct = new FormData();
         cartProduct.append("imageFile", cartImage);
         cartProduct.append(
           "product",
-          new Blob([JSON.stringify(updatedProductData)], { type: "application/json" })
+          new Blob([JSON.stringify(updatedProductData)], {
+            type: "application/json",
+          })
         );
-  
+
         await axios
-          .put(`http://${Host}:8080/api/product/${item.id}`, cartProduct, {
+          .put(`${Host}api/product/${item.id}`, cartProduct, {
             headers: {
               "Content-Type": "multipart/form-data",
+              Authorization: token ? `Bearer ${token}` : undefined,
+              
             },
           })
           .then((response) => {
-            console.log("Product updated successfully:", (cartProduct));
+            console.log("Product updated successfully:", cartProduct);
           })
           .catch((error) => {
             console.error("Error updating product:", error);
@@ -146,7 +164,6 @@ const Cart = () => {
                   style={{ display: "flex", alignContent: "center" }}
                   key={item.id}
                 >
-                 
                   <div>
                     <img
                       src={item.imageUrl}
@@ -215,7 +232,6 @@ const Cart = () => {
         handleCheckout={handleCheckout}
       />
     </div>
-
   );
 };
 

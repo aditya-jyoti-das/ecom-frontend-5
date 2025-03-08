@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+import axios from "../../src/axios";
 import Host from "./Host";
 const UpdateProduct = () => {
+  const token = localStorage.getItem("token");
   const { id } = useParams();
   const [product, setProduct] = useState({});
   const [image, setImage] = useState();
@@ -21,18 +22,27 @@ const UpdateProduct = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await axios.get(
-          `http://${Host}:8080/api/product/${id}`
-        );
+        const response = await axios.get(`${Host}api/product/${id}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        });
 
         setProduct(response.data);
-      
+
         const responseImage = await axios.get(
-          `http://${Host}:8080/api/product/${id}/image`,
-          { responseType: "blob" }
+          `${Host}api/product/${id}/image`,
+          {
+            responseType: "blob",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          }
         );
-       const imageFile = await converUrlToFile(responseImage.data,response.data.imageName)
-        setImage(imageFile);     
+        const imageFile = await converUrlToFile(
+          responseImage.data,
+          response.data.imageName
+        );
+        setImage(imageFile);
         setUpdateProduct(response.data);
       } catch (error) {
         console.error("Error fetching product:", error);
@@ -46,30 +56,28 @@ const UpdateProduct = () => {
     console.log("image Updated", image);
   }, [image]);
 
-
-
-  const converUrlToFile = async(blobData, fileName) => {
+  const converUrlToFile = async (blobData, fileName) => {
     const file = new File([blobData], fileName, { type: blobData.type });
     return file;
-  }
- 
-  const handleSubmit = async(e) => {
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("images", image)
-    console.log("productsdfsfsf", updateProduct)
+    console.log("images", image);
+    console.log("productsdfsfsf", updateProduct);
     const updatedProduct = new FormData();
     updatedProduct.append("imageFile", image);
     updatedProduct.append(
       "product",
       new Blob([JSON.stringify(updateProduct)], { type: "application/json" })
     );
-  
 
-  console.log("formData : ", updatedProduct)
+    console.log("formData : ", updatedProduct);
     axios
-      .put(`http://${Host}:8080/api/product/${id}`, updatedProduct, {
+      .put(`${Host}api/product/${id}`, updatedProduct, {
         headers: {
           "Content-Type": "multipart/form-data",
+          Authorization: token ? `Bearer ${token}` : undefined,
         },
       })
       .then((response) => {
@@ -78,11 +86,10 @@ const UpdateProduct = () => {
       })
       .catch((error) => {
         console.error("Error updating product:", error);
-        console.log("product unsuccessfull update",updateProduct)
+        console.log("product unsuccessfull update", updateProduct);
         alert("Failed to update product. Please try again.");
       });
   };
- 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -91,15 +98,14 @@ const UpdateProduct = () => {
       [name]: value,
     });
   };
-  
+
   const handleImageChange = (e) => {
     setImage(e.target.files[0]);
   };
-  
 
   return (
-    <div className="update-product-container" >
-      <div className="center-container"style={{marginTop:"7rem"}}>
+    <div className="update-product-container">
+      <div className="center-container" style={{ marginTop: "7rem" }}>
         <h1>Update Product</h1>
         <form className="row g-3 pt-1" onSubmit={handleSubmit}>
           <div className="col-md-6">
@@ -225,7 +231,10 @@ const UpdateProduct = () => {
                 id="gridCheck"
                 checked={updateProduct.productAvailable}
                 onChange={(e) =>
-                  setUpdateProduct({ ...updateProduct, productAvailable: e.target.checked })
+                  setUpdateProduct({
+                    ...updateProduct,
+                    productAvailable: e.target.checked,
+                  })
                 }
               />
               <label className="form-check-label">Product Available</label>

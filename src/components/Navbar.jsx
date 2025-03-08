@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import Home from "./Home"
-import axios from "axios";
+import Home from "./Home";
+import axios from "../../src/axios";
 import Host from "./Host";
 // import { json } from "react-router-dom";
 // import { BiSunFill, BiMoon } from "react-icons/bi";
@@ -16,14 +16,20 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [noResults, setNoResults] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
-  const [showSearchResults,setShowSearchResults] = useState(false)
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const token = localStorage.getItem("token");
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async (value) => {
     try {
-      const response = await axios.get(`http://${Host}:8080/api/products`);
+      const response = await axios.get(`${Host}api/products`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : undefined, // Manual token
+        },
+      });
       setSearchResults(response.data);
       console.log(response.data);
     } catch (error) {
@@ -34,17 +40,23 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
   const handleChange = async (value) => {
     setInput(value);
     if (value.length >= 1) {
-      setShowSearchResults(true)
-    try {
-      const response = await axios.get(
-        `http://${Host}:8080/api/products/search?keyword=${value}`
-      );
-      setSearchResults(response.data);
-      setNoResults(response.data.length === 0);
-      console.log(response.data);
-    } catch (error) {
-      console.error("Error searching:", error);
-    }
+      setShowSearchResults(true);
+      try {
+        const response = await axios.get(
+          `${Host}api/products/search?keyword=${value}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : undefined, // Manual token
+            },
+          }
+        );
+        setSearchResults(response.data);
+        setNoResults(response.data.length === 0);
+        console.log(response.data);
+      } catch (error) {
+        console.error("Error searching:", error);
+      }
     } else {
       setShowSearchResults(false);
       setSearchResults([]);
@@ -108,6 +120,11 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
                     Add Product
                   </a>
                 </li>
+                <li className="nav-item">
+                  <a className="nav-link" href="/loginRegister">
+                    LogIn&Register
+                  </a>
+                </li>
 
                 <li className="nav-item dropdown">
                   <a
@@ -165,21 +182,22 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
                 />
                 {showSearchResults && (
                   <ul className="list-group">
-                    {searchResults.length > 0 ? (  
-                        searchResults.map((result) => (
+                    {searchResults.length > 0
+                      ? searchResults.map((result) => (
                           <li key={result.id} className="list-group-item">
-                            <a href={`/product/${result.id}`} className="search-result-link">
-                            <span>{result.name}</span>
+                            <a
+                              href={`/product/${result.id}`}
+                              className="search-result-link"
+                            >
+                              <span>{result.name}</span>
                             </a>
                           </li>
                         ))
-                    ) : (
-                      noResults && (
-                        <p className="no-results-message">
-                          No Prouduct with such Name
-                        </p>
-                      )
-                    )}
+                      : noResults && (
+                          <p className="no-results-message">
+                            No Prouduct with such Name
+                          </p>
+                        )}
                   </ul>
                 )}
                 {/* <button

@@ -11,6 +11,7 @@ import UpdateProduct from "./components/UpdateProduct";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import LoginRegister from "./components/LoginRegister";
 
 
 function App() {
@@ -51,6 +52,8 @@ function App() {
           />
           <Route path="/add_product" element={<AddProduct />} />
           <Route path="/product" element={<Product  />} />
+          <Route path="/loginRegister" element={<LoginRegister  />} />
+
           <Route path="product/:id" element={<Product  />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/product/update/:id" element={<UpdateProduct />} />
